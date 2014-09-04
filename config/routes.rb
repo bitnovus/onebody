@@ -187,7 +187,7 @@ OneBody::Application.routes.draw do
         put :batch
       end
     end
-    resources :updates, :admins, :membership_requests
+    resources :updates, :admins, :membership_requests, :reports
     namespace :checkin do
       root to: 'dashboards#show'
       resource :dashboard
@@ -207,4 +207,5 @@ OneBody::Application.routes.draw do
     resource :interface
     resources :families, :people, :groups
   end
+
 end

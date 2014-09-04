@@ -1,5 +1,7 @@
 class AttendanceTotalsReport < Dossier::Report
 
+  include ReportsHelper
+
   def sql
     Group.select(:name)
          .joins(:attendance_records)
@@ -7,19 +9,20 @@ class AttendanceTotalsReport < Dossier::Report
          .references(:attendance_records)
          .where('attended_at >= :fromdate and attended_at <= :thrudate')
          .group(:name, :attended_at)
+         .order(:name)
          .to_sql
   end
 
   def fromdate
-    Date.parse_in_locale(options[:fromdate].to_s) || (Date.current - 1.week)
+      format_dateparam(options[:fromdate], (Date.current - 1.week))
   end
 
   def thrudate
-    Date.parse_in_locale(options[:thrudate].to_s) || Date.current
+       format_dateparam(options[:thrudate])
   end
 
   def format_attended_at(value)
-    value.to_s(:date) if value.is_a?(Time)
+      format_date(value)
   end
 
 end
