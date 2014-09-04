@@ -23,7 +23,6 @@ class BreadcrumbPresenter
     news_crumb
     verse_crumb
     prayer_request_crumb
-    note_crumb
     admin_crumb
     document_crumb
     reports_crumb
@@ -100,7 +99,7 @@ class BreadcrumbPresenter
         else
           crumbs << ['fa fa-camera-retro', t('nav.albums'), group_albums_path(album.owner_id)]
         end
-      elsif album.owner_type == 'Group'
+      elsif album.owner_type == 'Person'
         if @route == 'pictures#show'
           crumbs << ['fa fa-camera-retro', album.name, person_album_path(album.owner_id, album)]
         else
@@ -131,12 +130,6 @@ class BreadcrumbPresenter
   def prayer_request_crumb
     if @controller == 'prayer_requests' and group
       crumbs << ['fa fa-heart', t('nav.prayer_requests'), group_prayer_requests_path(group)] unless @action == 'index'
-    end
-  end
-
-  def note_crumb
-    if @assigns['note'] and person
-      crumbs << ['fa fa-file', t('nav.notes'), person_notes_path(person)]
     end
   end
 
@@ -179,7 +172,6 @@ class BreadcrumbPresenter
   end
 
   def reports_crumb
-    puts @controller
     if @controller == 'dossier/reports'
         crumbs << ['fa fa-gear', t('nav.admin'), admin_path]
         crumbs << ['fa fa-table', t('nav.report'), administration_reports_path]

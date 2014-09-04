@@ -113,6 +113,7 @@ describe Person do
     end
 
     it 'should know about linked group memberships' do
+      @group.membership_mode = 'link_code'
       @group.link_code = 'B345'
       @group.save!
       @person.classes = 'A123,B345,C567'
@@ -125,7 +126,7 @@ describe Person do
     it 'should know about parent_of group memberships via basic group membership' do
       @child = FactoryGirl.create(:person, family: @person.family, child: true)
       @group.memberships.create! person: @child
-      @parent_group = FactoryGirl.create(:group, parents_of: @group.id)
+      @parent_group = FactoryGirl.create(:group, membership_mode: 'parents_of', parents_of: @group.id)
       @parent_group.update_memberships
       expect(@person.member_of?(@parent_group)).to be
       expect(@person2.member_of?(@parent_group)).not_to be
@@ -133,12 +134,13 @@ describe Person do
 
     it 'should know about parent_of group memberships via linked group membership' do
       @child = FactoryGirl.create(:person, family: @person.family, child: true)
+      @group.membership_mode = 'link_code'
       @group.link_code = 'B345'
       @group.save!
       @child.classes = 'A123,B345,C567'
       @child.save!
       @group.update_memberships
-      @parent_group = FactoryGirl.create(:group, parents_of: @group.id)
+      @parent_group = FactoryGirl.create(:group, membership_mode: 'parents_of', parents_of: @group.id)
       @parent_group.update_memberships
       expect(@person.member_of?(@parent_group)).to be
       expect(@person2.member_of?(@parent_group)).not_to be
@@ -169,12 +171,57 @@ describe Person do
     should allow_value("User_Name123").for(:twitter)
   end
 
-  it "should mark email_changed when email address changes" do
-    @person = FactoryGirl.create(:person)
-    @person.email = 'newaddress@example.com'
-    expect(@person).to_not be_email_changed
-    @person.save
-    expect(@person).to be_email_changed
+  describe '#email_changed' do
+    context 'email address is changed' do
+      let(:person) { FactoryGirl.create(:person) }
+
+      before do
+        person.email = 'newaddress@example.com'
+        expect(person.email_changed).to eq(false)
+        person.save
+      end
+
+      it 'sets email_changed to true' do
+        expect(person.email_changed).to eq(true)
+      end
+
+      it 'sends an email' do
+        email = ActionMailer::Base.deliveries.last
+        expect(email.subject).to eq('John Smith Changed Email')
+      end
+    end
+
+    context 'email address is changed, but the "Send Email Changes To" setting is blank' do
+      let(:person) { FactoryGirl.create(:person) }
+
+      before do
+        Setting.set(:contact, :send_email_changes_to, '')
+        person.email = 'newaddress@example.com'
+        person.save
+      end
+
+      it 'does not send an email' do
+        expect(ActionMailer::Base.deliveries).to be_empty
+      end
+
+      after do
+        Setting.set(:contact, :send_email_changes_to, 'admin@example.com')
+      end
+    end
+
+    context 'email address is changed, but dont_mark_email_changed=true' do
+      let(:person) { FactoryGirl.create(:person) }
+
+      before do
+        person.dont_mark_email_changed = true
+        person.email = 'newaddress@example.com'
+        person.save
+      end
+
+      it 'does not set email_changed' do
+        expect(person.email_changed).to eq(false)
+      end
+    end
   end
 
   it 'should lowercase email' do
